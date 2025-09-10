@@ -18,14 +18,14 @@ jobs:
     - name: Set up Python
       uses: actions/setup-python@v4
       with:
-        python-version: '3.9'
+        python-version: '3.8'
         
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip setuptools wheel
         
     - name: Install project dependencies
-      run: python setup_mcp.py
+      run: pip install -r requirements.txt
         
     - name: Create portable environment package
       run: |
