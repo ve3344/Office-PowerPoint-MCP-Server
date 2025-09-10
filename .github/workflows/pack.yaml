@@ -44,30 +44,6 @@ jobs:
         source venv/bin/activate
         mkdir -p python-env-package
         cp -r venv python-env-package/
-        
-        cat > python-env-package/README.md << 'EOF'
-# Python离线环境包
-
-## 使用方法
-### 手动激活环境
-- Linux/macOS: source venv/bin/activate
-- Windows: venv\\Scripts\\activate.bat
-
-### 验证环境
-python --version
-pip list
-
-## 包含内容
-- Python虚拟环境
-- 项目依赖包
-- 使用说明文档
-
-## 注意事项
-- 此环境包基于Ubuntu构建，可能在不同系统上需要调整
-- 如需添加新依赖，请在激活环境后使用 pip install package_name
-- 重新打包依赖请使用 pip freeze > requirements.txt
-EOF
-        
         tar -czf python-environment.tar.gz python-env-package/
         
     - name: Upload environment package
@@ -92,13 +68,8 @@ EOF
           包含：
           - 完整的Python虚拟环境
           - 所有依赖包
-          - 使用说明文档
           
           下载后解压即可使用，无需联网安装依赖。
-          
-          使用方法：
-          - Linux/macOS: source venv/bin/activate
-          - Windows: venv\Scripts\activate.bat
         draft: false
         prerelease: false
         
