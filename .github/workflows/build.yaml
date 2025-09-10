@@ -18,7 +18,7 @@ jobs:
     - name: Set up Python
       uses: actions/setup-python@v4
       with:
-        python-version: '3.9'  # 可以根据需要修改Python版本
+        python-version: '3.8'
         
     - name: Install dependencies
       run: |
@@ -42,28 +42,20 @@ jobs:
     - name: Create portable environment package
       run: |
         source venv/bin/activate
-        
-        # 创建打包目录
         mkdir -p python-env-package
-        
-        # 复制虚拟环境
         cp -r venv python-env-package/
         
-        # 创建使用说明
         cat > python-env-package/README.md << 'EOF'
 # Python离线环境包
 
 ## 使用方法
-
 ### 手动激活环境
-- Linux/macOS: `source venv/bin/activate`
-- Windows: `venv\Scripts\activate.bat`
+- Linux/macOS: source venv/bin/activate
+- Windows: venv\\Scripts\\activate.bat
 
 ### 验证环境
-```bash
 python --version
 pip list
-```
 
 ## 包含内容
 - Python虚拟环境
@@ -72,11 +64,10 @@ pip list
 
 ## 注意事项
 - 此环境包基于Ubuntu构建，可能在不同系统上需要调整
-- 如需添加新依赖，请在激活环境后使用 `pip install package_name`
-- 重新打包依赖请使用 `pip freeze > requirements.txt`
+- 如需添加新依赖，请在激活环境后使用 pip install package_name
+- 重新打包依赖请使用 pip freeze > requirements.txt
 EOF
         
-        # 创建压缩包
         tar -czf python-environment.tar.gz python-env-package/
         
     - name: Upload environment package
@@ -106,8 +97,8 @@ EOF
           下载后解压即可使用，无需联网安装依赖。
           
           使用方法：
-          - Linux/macOS: `source venv/bin/activate`
-          - Windows: `venv\Scripts\activate.bat`
+          - Linux/macOS: source venv/bin/activate
+          - Windows: venv\Scripts\activate.bat
         draft: false
         prerelease: false
         
