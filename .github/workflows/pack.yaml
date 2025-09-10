@@ -25,14 +25,7 @@ jobs:
         python -m pip install --upgrade pip setuptools wheel
         
     - name: Install project dependencies
-      run: |
-        if [ -f requirements.txt ]; then
-          pip install -r requirements.txt
-        else
-          echo "No requirements.txt found, creating one with basic packages..."
-          pip install flask numpy pandas requests
-          pip freeze > requirements.txt
-        fi
+      run: python setup_mcp.py
         
     - name: Create portable environment package
       run: |
