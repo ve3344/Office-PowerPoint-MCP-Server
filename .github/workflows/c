@@ -1,0 +1,210 @@
+name: Pack Python Environment for Offline Deployment
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+  workflow_dispatch:  # 允许手动触发
+
+jobs:
+  pack-environment:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.9'  # 可以根据需要修改Python版本
+        
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install wheel virtualenv
+        
+    - name: Create virtual environment
+      run: |
+        python -m venv venv
+        
+    - name: Install project dependencies
+      run: |
+        source venv/bin/activate
+        if [ -f requirements.txt ]; then
+          pip install -r requirements.txt
+        else
+          echo "No requirements.txt found, creating one..."
+          pip freeze > requirements.txt
+        fi
+        
+    - name: Create portable environment package
+      run: |
+        source venv/bin/activate
+        
+        # 创建打包目录
+        mkdir -p python-env-package
+        
+        # 复制虚拟环境
+        cp -r venv python-env-package/
+        
+        # 创建启动脚本
+        cat > python-env-package/start.sh << 'EOF'
+#!/bin/bash
+# Python环境启动脚本
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+VENV_DIR="$SCRIPT_DIR/venv"
+
+# 激活虚拟环境
+source "$VENV_DIR/bin/activate"
+
+# 显示Python版本和已安装包
+python --version
+pip list
+
+echo "Python环境已激活！"
+echo "使用方法:"
+echo "  python your_script.py"
+echo "  pip install package_name"
+EOF
+
+        # 创建Windows启动脚本
+        cat > python-env-package/start.bat << 'EOF'
+@echo off
+setlocal enabledelayedexpansion
+set SCRIPT_DIR=%~dp0
+set VENV_DIR=%SCRIPT_DIR%venv
+
+REM 激活虚拟环境
+call "%VENV_DIR%\Scripts\activate.bat"
+
+REM 显示Python版本和已安装包
+python --version
+pip list
+
+echo Python环境已激活！
+echo 使用方法:
+echo   python your_script.py
+echo   pip install package_name
+pause
+EOF
+
+        # 创建使用说明
+        cat > python-env-package/README.md << 'EOF'
+# Python离线环境包
+
+## 使用方法
+
+### Linux/macOS
+```bash
+./start.sh
+```
+
+### Windows
+双击运行 `start.bat`
+
+### 手动激活环境
+- Linux/macOS: `source venv/bin/activate`
+- Windows: `venv\Scripts\activate.bat`
+
+## 包含内容
+- Python虚拟环境
+- 项目依赖包
+- 启动脚本
+- 使用说明
+
+## 注意事项
+- 此环境包基于Ubuntu构建，可能在不同系统上需要调整
+- 如需添加新依赖，请在激活环境后使用 `pip install package_name`
+- 重新打包依赖请使用 `pip freeze > requirements.txt`
+EOF
+
+        # 添加权限
+        chmod +x python-env-package/start.sh
+        
+        # 创建压缩包
+        tar -czf python-environment.tar.gz python-env-package/
+        
+    - name: Upload environment package
+      uses: actions/upload-artifact@v3
+      with:
+        name: python-offline-environment
+        path: python-environment.tar.gz
+        retention-days: 30
+        
+    - name: Create Release
+      if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
+      uses: actions/create-release@v1
+      id: create_release
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: v${{ github.run_number }}
+        release_name: Python Environment Package v${{ github.run_number }}
+        body: |
+          Python环境离线部署包
+          
+          包含：
+          - 完整的Python虚拟环境
+          - 所有依赖包
+          - 启动脚本（支持Windows/Linux/macOS）
+          - 使用说明文档
+          
+          下载后解压即可使用，无需联网安装依赖。
+        draft: false
+        prerelease: false
+        
+    - name: Upload Release Asset
+      if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: ./python-environment.tar.gz
+        asset_name: python-offline-environment.tar.gz
+        asset_content_type: application/gzip
+
+  pack-conda-environment:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      
+    - name: Set up Miniconda
+      uses: conda-incubator/setup-miniconda@v2
+      with:
+        auto-update-conda: true
+        python-version: '3.9'
+        
+    - name: Create conda environment
+      run: |
+        if [ -f environment.yml ]; then
+          conda env create -f environment.yml
+        elif [ -f requirements.txt ]; then
+          conda create --name myenv python=3.9 --yes
+          conda activate myenv
+          pip install -r requirements.txt
+        else
+          conda create --name myenv python=3.9 --yes
+          conda activate myenv
+        fi
+        
+    - name: Export conda environment
+      run: |
+        conda activate myenv
+        conda env export > conda-environment.yml
+        
+    - name: Pack conda environment
+      run: |
+        conda install -c conda-forge conda-pack --yes
+        conda-pack -n myenv -o conda-environment.tar.gz
+        
+    - name: Upload conda package
+      uses: actions/upload-artifact@v3
+      with:
+        name: conda-offline-environment
+        path: conda-environment.tar.gz
+        retention-days: 30
