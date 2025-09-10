@@ -49,79 +49,32 @@ jobs:
         # 复制虚拟环境
         cp -r venv python-env-package/
         
-        # 创建启动脚本
-        cat > python-env-package/start.sh << 'EOF'
-#!/bin/bash
-# Python环境启动脚本
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-VENV_DIR="$SCRIPT_DIR/venv"
-
-# 激活虚拟环境
-source "$VENV_DIR/bin/activate"
-
-# 显示Python版本和已安装包
-python --version
-pip list
-
-echo "Python环境已激活！"
-echo "使用方法:"
-echo "  python your_script.py"
-echo "  pip install package_name"
-EOF
-
-        # 创建Windows启动脚本
-        cat > python-env-package/start.bat << 'EOF'
-@echo off
-setlocal enabledelayedexpansion
-set SCRIPT_DIR=%~dp0
-set VENV_DIR=%SCRIPT_DIR%venv
-
-REM 激活虚拟环境
-call "%VENV_DIR%\Scripts\activate.bat"
-
-REM 显示Python版本和已安装包
-python --version
-pip list
-
-echo Python环境已激活！
-echo 使用方法:
-echo   python your_script.py
-echo   pip install package_name
-pause
-EOF
-
         # 创建使用说明
         cat > python-env-package/README.md << 'EOF'
 # Python离线环境包
 
 ## 使用方法
 
-### Linux/macOS
-```bash
-./start.sh
-```
-
-### Windows
-双击运行 `start.bat`
-
 ### 手动激活环境
 - Linux/macOS: `source venv/bin/activate`
 - Windows: `venv\Scripts\activate.bat`
 
+### 验证环境
+```bash
+python --version
+pip list
+```
+
 ## 包含内容
 - Python虚拟环境
 - 项目依赖包
-- 启动脚本
-- 使用说明
+- 使用说明文档
 
 ## 注意事项
 - 此环境包基于Ubuntu构建，可能在不同系统上需要调整
 - 如需添加新依赖，请在激活环境后使用 `pip install package_name`
 - 重新打包依赖请使用 `pip freeze > requirements.txt`
 EOF
-
-        # 添加权限
-        chmod +x python-env-package/start.sh
         
         # 创建压缩包
         tar -czf python-environment.tar.gz python-env-package/
@@ -148,10 +101,13 @@ EOF
           包含：
           - 完整的Python虚拟环境
           - 所有依赖包
-          - 启动脚本（支持Windows/Linux/macOS）
           - 使用说明文档
           
           下载后解压即可使用，无需联网安装依赖。
+          
+          使用方法：
+          - Linux/macOS: `source venv/bin/activate`
+          - Windows: `venv\Scripts\activate.bat`
         draft: false
         prerelease: false
         
